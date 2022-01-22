@@ -60,7 +60,6 @@ class Calculations():
             for i in range(len(step_size)):
                 if step_size[i]=="1":
                     step=(1,i+1)
-        print(step)
         if operation == "buy":
             if step[0]==-1:
                 if step[1]==0:

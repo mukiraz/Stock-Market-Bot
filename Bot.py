@@ -32,16 +32,19 @@ class Bot:
         return self.client.get_asset_balance(asset=asset)
     
     def start_bot(self):
-        parameters=DB().get_parameters()
+        parameters = DB().get_parameters()
         self.next_close_time = Calc().calculate_open_close_time(DB().get_parameter_by_name("interval"),self.client.get_server_time())["close_time"]
         coin_name=""
         DB().update_data("parameters", ["has_cash","has_coin"], [1,0])
+        assets=self.client.get_asset_balance(asset=parameters["cash_type"])
+        total_cash_start = float(assets["free"])
+        cash_limit = total_cash_start - (parameters["cash_start"] - parameters["cash_limit"])
         while True:
-                parameters=DB().get_parameters()
+                parameters = DB().get_parameters()
                 assets=self.client.get_asset_balance(asset=parameters["cash_type"])
                 total_cash=assets["free"]
                 if parameters["has_cash"]==1:
-                    if parameters["cash"]<parameters["cash_limit"]:
+                    if total_cash_start < cash_limit:
                         print("Because of the loss, the system stopped.")
                         break                    
                     coin_name = self.decide_best_coin(parameters)
@@ -85,11 +88,10 @@ class Bot:
             self.coin = Calc.normalize_coin(self.client.get_symbol_info(coin_name), asset_balance, "sell")
         order=self.client.order_market_sell(symbol=coin_name, quantity= self.coin)
         calculated_order=Calc.calculate_order(order)
-        cash=calculated_order["fee"]
+        cash_sold=calculated_order["fee"]
         comission=calculated_order["comission"]
-        cash=cash-comission
-        if cash>parameters["cash_start"]:
-            cash=parameters["cash_start"]
+        cash_sold=cash_sold-comission
+        cash=parameters["cash_start"]
         DB().update_data("parameters", ["cash"], [cash])
         assets=self.client.get_asset_balance(asset=parameters["cash_type"])
         total_cash=assets["free"]
@@ -99,7 +101,7 @@ class Bot:
         print("Quantity :", calculated_order["executedQty"])
         print("Comission :", calculated_order["comission"]) 
         print("Total cash:",total_cash)
-        Logging("coin sold, cash: "+str(cash)).logEvent()
+        Logging("coin sold, cash: "+str(cash_sold)).logEvent()
         Logging("total_cash: "+str(total_cash)).logEvent()
         self.coin=0
         DB().update_data("parameters", ["coin", "has_cash", "has_coin"], [self.coin,1,0])
@@ -149,18 +151,26 @@ class Bot:
         return calculated_order["average"]
     
     def sell_coin_exceeds_stop_loss(self,coin_name, parameters, last_price, prediction):
-        stop_price = self.average_bought * (1- parameters["stop_loss_limit"])
+        stop_price = self.average_bought * (1 + parameters["stop_loss_limit"])
+        profit_price = self.average_bought * (1 + parameters["profit_limit"])
         while int(self.next_close_time) > self.client.get_server_time():
             average =float(self.client.get_avg_price(symbol = coin_name)["price"])
             if average < stop_price:
-                print("Because of the stop loss coin will be sold. Average: ",average, "Stop price: ", stop_price, "coin: ", self.coin)
+                print("Because of the stop loss coin will be sold. Average: ",average, "Stop price: ", stop_price, "Profit Price", profit_price, "coin: ", self.coin)
                 self.sell_coin(coin_name, parameters, last_price, prediction, explanation = "Stop loss." )
                 wait_parameters = Calc().wait_time(parameters["interval"],self.client.get_server_time())
                 self.next_close_time = wait_parameters["next_close_time"]
                 sleep(wait_parameters["delay"])
                 break
+            elif average >= profit_price:
+                print("Because of average of the coin price exceeds profit limit coin will be sold. Average: ",average, "Stop price: ", stop_price, "Profit Price", profit_price, "coin: ", self.coin)
+                self.sell_coin(coin_name, parameters, last_price, prediction, explanation = "Profit loss." )
+                wait_parameters = Calc().wait_time(parameters["interval"],self.client.get_server_time())
+                self.next_close_time = wait_parameters["next_close_time"]
+                sleep(wait_parameters["delay"])
+                break                
             else:
-                print("Average is higer than stop price! Continue... Average: ",average, "Stop price: ", stop_price, "coin: ", self.coin)
+                print("Average is higer than stop price! Continue... Average: ",average, "Stop price: ", stop_price, "Profit Price", profit_price, "coin: ", self.coin)
             sleep(1)
         wait_parameters = Calc().wait_time(parameters["interval"],(self.client.get_server_time()-2500))
         self.next_close_time = wait_parameters["next_close_time"]

@@ -70,37 +70,42 @@ class Controller:
     @staticmethod
     def do_10():
         """10. Set Stop Loss Limit"""
-        Controller.set_database_value("stop_loss_limit","Stop Loss Limit")    
-            
+        Controller.set_database_value("stop_loss_limit","Stop Loss Limit")
+    
     @staticmethod
     def do_11():
-        """11. Set Number of Coin Will Be Predicted"""
+        """11. Set Profit Limit"""
+        Controller.set_database_value("profit_limit","Profit Limit")
+            
+    @staticmethod
+    def do_12():
+        """12. Set Number of Coin Will Be Predicted"""
         Controller.set_database_value("number_of_coin","Number of Coin")
 
     
     @staticmethod
-    def do_12():
-        """12. Set SMTP Server Name"""
+    def do_13():
+        """13. Set SMTP Server Name"""
         Controller.set_database_value("SMTPserver","SMTP Server Name")
         
     @staticmethod
-    def do_13():
-        """13. Set SMTP User Name"""
+    def do_14():
+        """14. Set SMTP User Name"""
         Controller.set_database_value("SMTPusername","SMTP User Name")
         
     @staticmethod
-    def do_14():
-        """14. Set SMTP Password"""
+    def do_15():
+        """15. Set SMTP Password"""
         Controller.set_database_value("SMTPpassword","SMTP Password")
     
     @staticmethod
-    def do_15():
-        """15. Check SMTP Connection"""
+    def do_16():
+        """16. Check SMTP Connection"""
         Controller.is_SMTP_mail_connection_ok()
     
     @staticmethod
-    def do_16():
-        """16. Reset Settings"""
+    def do_17():
+        """17. Reset Settings"""
         confirm = input("Your all parameters will be reset. Do yo want to proceed? Y/N \n")
         if confirm.upper() == "Y":
             DB().reset_parameters()
@@ -110,8 +115,8 @@ class Controller:
 
         
     @staticmethod
-    def do_17():
-        """17. Start Bot"""
+    def do_18():
+        """18. Start Bot"""
         parameters=DB().get_parameters()
         binance_connection_status = Bot().is_connection_ok()
         smtp_connection_status = BBM().check_server_connection()
@@ -142,20 +147,23 @@ class Controller:
         elif not parameters["stop_loss_limit"]:
             print(colored("Set Stop Loss Limit from menu 10\n", 'red'))
             Controller.set_database_value("stop_loss_limit","Stop Loss Limit")
+        elif not parameters["profit_limit"]:
+            print(colored("Set Profit from menu 11\n", 'red'))
+            Controller.set_database_value("stop_loss_limit","Stop Loss Limit")
         elif not parameters["number_of_coin"]:
-            print(colored("Set Number of Coins from menu 11\n", 'red'))
+            print(colored("Set Number of Coins from menu 12\n", 'red'))
             Controller.set_database_value("number_of_coin","Number of Coins")
         elif not parameters["SMTPserver"]:
-            print(colored("Set SMTP Server Name from menu 12\n", 'red'))
+            print(colored("Set SMTP Server Name from menu 13\n", 'red'))
             Controller.set_database_value("SMTPserver","SMTP Server Name")
         elif not parameters["SMTPusername"]:
-            print(colored("Set SMTP User Name from menu 13\n", 'red'))
+            print(colored("Set SMTP User Name from menu 14\n", 'red'))
             Controller.set_database_value("SMTPusername","SMTP User Name")
         elif not parameters["SMTPpassword"]:
-            print(colored("Set SMTP Password from menu 14\n", 'red'))
+            print(colored("Set SMTP Password from menu 15\n", 'red'))
             Controller.set_database_value("SMTPpassword","SMTP Password")
         elif not smtp_connection_status:
-            print(colored("Check your SMTP Mail communication from menu 15\n", 'red'))
+            print(colored("Check your SMTP Mail communication from menu 16\n", 'red'))
             Controller.is_SMTP_mail_connection_ok()
         else:
             print("You are about to start the bot with parameters below:")
@@ -165,16 +173,15 @@ class Controller:
             print("Cash:",parameters["cash"])
             print("Cash Limit:",parameters["cash_limit"])
             print("Stop Loss Ratio:",parameters["stop_loss_limit"])
+            print("Profit Limit:",parameters["profit_limit"])
             print("Number of Coins:",parameters["number_of_coin"])
             agreement=input("By typing 'Y' and pressing enter, you will admit the terms and conditions.\nWill you start the bot? Y/N\n")
             if agreement.upper() == "Y":
                 Bot().start_bot()
-
-
             
     @staticmethod
-    def do_18():
-        """18. Quit."""
+    def do_19():
+        """19. Quit."""
         print("Exiting...")
 
 
@@ -358,7 +365,21 @@ Ugur KİRAZ, I will not accept your money loss.
                 print(colored("Please set a value between 0 and 1. \nDo not forget to set decimal value with dot(.) not with comma (,)\n", 'red'))
                 Controller.set_database_value(parameter_value, parameter_string)
             else:
-                return float(stop_loss_limit)        
+                return float(stop_loss_limit)
+        
+        elif parameter_value == "profit_limit":
+            profit_limit = input("After bot buying a coin, it will be automatically sold it if the average of the \ncoin is above that percentage, It will be set as percentage- like 0.001.\nPlease insert your "+ parameter_string +" between 0-1.\nDo not forget to set decimal value with dot(.) not with comma (,)\n")   
+            if profit_limit == "":
+                print(colored("You should enter a " + parameter_string + "\n", 'red'))
+                Controller.set_database_value(parameter_value, parameter_string)
+            elif not Calc.check_input_int_or_float(profit_limit):
+                print(colored("Please set a valid float or integer\n", 'red'))
+                Controller.set_database_value(parameter_value, parameter_string)
+            elif float(profit_limit)<=0 or float(profit_limit)>1:
+                print(colored("Please set a value between 0 and 1. \nDo not forget to set decimal value with dot(.) not with comma (,)\n", 'red'))
+                Controller.set_database_value(parameter_value, parameter_string)
+            else:
+                return float(profit_limit)
             
         elif parameter_value == "number_of_coin":
             print("Bot will get a list of most traded coins among this number. Please enter a \nnumber between 1 and 10")
@@ -438,7 +459,7 @@ Ugur KİRAZ, I will not accept your money loss.
     def run():
         Controller.generate_menu()
         user_input = "00"
-        while(user_input != "18"):
+        while(user_input != "19"):
             try:
                 user_input = str(input())
                 if len(user_input) == 1:
