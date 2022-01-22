@@ -450,4 +450,4 @@ Ugur KİRAZ, I will not accept your money loss.
                 Controller.generate_menu_header()                
                 Controller.execute(user_input)
                 print("Choose an operation:", end="")
-        print("\nProgram stopped.")
+        print("\nThank you for using Binance Bot by Murat Ugur KİRAZ.")

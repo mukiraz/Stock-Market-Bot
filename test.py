@@ -8,21 +8,48 @@ Created on Tue Nov 23 13:55:33 2021
 from BinanceCommunication import BinanceCommunication as BC
 from DatabaseClass import DatabaseClass as DB
 from Calculations import Calculations as Calc
+import pandas as pd
+from time import sleep
 
 client=BC(DB().get_parameter_by_name("pk"),DB().get_parameter_by_name("sk"))
 
-parameters = DB().get_parameters()
+markets = client.first_n_markets(20, "USDT")
+cash = 20
 
-coin_name = "ADAUSDT"
-coin_name_non = coin_name.replace(parameters["cash_type"], '')
-asset_balance = 12.3932
+df = pd.DataFrame(columns=["coin_name","coin_price","coin_amount", "norm_coin_amount_buy", "norm_coin_amount_sell"])
 
-if asset_balance < 12.4:
-    coin = Calc.normalize_coin(client.get_symbol_info(coin_name), asset_balance, "sell")
+
+
+
+for market in markets:
+    print(market)
+    avg = float(client.get_avg_price(market)["price"])
+    coin_amount = cash/avg
+    norm_coin_amount_buy = Calc.normalize_coin(client.get_symbol_info(market), coin_amount, "buy")
+    norm_coin_amount_sell = Calc.normalize_coin(client.get_symbol_info(market), coin_amount, "sell")
+    df = df.append({'coin_name':market,
+                    'coin_price': avg,
+                    'coin_amount':coin_amount,
+                    'norm_coin_amount_buy':norm_coin_amount_buy,
+                    'norm_coin_amount_sell':norm_coin_amount_sell
+                    }, ignore_index=True)
+    
+
 
 
 
 """
+parameters = DB().get_parameters()
+
+coin_name = "BNBUSDT"
+coin_name_non = coin_name.replace(parameters["cash_type"], '')
+asset_balance = 0.057
+
+coin = Calc.normalize_coin(client.get_symbol_info(coin_name), asset_balance, "buy")
+
+
+
+
 
 import websocket, json
 from BinanceCommunication import BinanceCommunication as BC

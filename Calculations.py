@@ -60,6 +60,7 @@ class Calculations():
             for i in range(len(step_size)):
                 if step_size[i]=="1":
                     step=(1,i+1)
+        print(step)
         if operation == "buy":
             if step[0]==-1:
                 if step[1]==0:
@@ -88,7 +89,7 @@ class Calculations():
             if step[0]==-1:
                 coin = str(coin)
                 dot = coin.index(".") + 1
-                return coin[0:dot+1]
+                return coin[0:dot+step[1]]
             else:
                 return int(coin)
             

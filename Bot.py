@@ -83,7 +83,7 @@ class Bot:
         asset_balance = float(self.client.get_asset_balance(coin_name_non)["free"])
         if asset_balance < float(self.coin):
             self.coin = Calc.normalize_coin(self.client.get_symbol_info(coin_name), asset_balance, "sell")
-        order=self.client.order_market_sell(symbol=coin_name,quantity= self.coin)
+        order=self.client.order_market_sell(symbol=coin_name, quantity= self.coin)
         calculated_order=Calc.calculate_order(order)
         cash=calculated_order["fee"]
         comission=calculated_order["comission"]
