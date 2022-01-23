@@ -62,7 +62,7 @@ class Bot:
                         continue
                 if parameters["has_coin"]==1:
                     klines = self.get_correct_candles(coin_name, parameters, self.next_close_time)
-                    values = CP().predictWRandomForest(klines,coin_name,number_of_rows = 2)
+                    values = CP().predictWSVM(klines,coin_name,number_of_rows = 2)
                     avg_price=self.client.get_avg_price(symbol=coin_name)
                     avg_price = float(avg_price["price"])
                     last_price=values["last_price"]
@@ -192,7 +192,7 @@ class Bot:
         self.last_prices.clear()
         for first_coin in first_coins:
             klines = self.get_correct_candles(first_coin, parameters, self.next_close_time)                    
-            values = CP().predictWRandomForest(klines,first_coin,number_of_rows = 2)
+            values = CP().predictWSVM(klines,first_coin,number_of_rows = 2)
             self.best_price_offer[first_coin]=(values["prediction"]/values["last_price"])
             self.last_prices[first_coin]=values["last_price"]
             self.predictions[first_coin]=values["prediction"]       

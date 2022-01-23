@@ -5,8 +5,8 @@ Created on Tue Jan 11 21:58:39 2022
 @author: mukir
 """
 
-from sklearn.ensemble import RandomForestRegressor
-#from xgboost import XGBRegressor
+
+
 from CandleShaping import CandleShaping as CS
 
 
@@ -14,7 +14,8 @@ class CoinPredictors:
     
     def prepare_for_learning(self,candles, number_of_rows):
         candles = candles.drop(['Close_time','Ignore.'], axis=1)        
-        candles500=CS.add_rsi_macd_bollinger(candles)
+        #candles500=CS.add_rsi_macd_bollinger(candles)
+        candles500 = candles
         close=candles500.Close        
         if number_of_rows == 500:
             train_rows=candles500.iloc[0:(len(candles500)-1)]
@@ -34,10 +35,65 @@ class CoinPredictors:
             }
 
     def predictWRandomForest(self , candles , coin_name, number_of_rows = 500):
+        from sklearn.ensemble import RandomForestRegressor
         train_set = self.prepare_for_learning(candles, number_of_rows)
         rf_reg = RandomForestRegressor(random_state=1,n_jobs=-1)
         rf_reg.fit(train_set["X"],train_set["Y"])
         prediction = rf_reg.predict(train_set["prediction_row"].values)
+        prediction = prediction[0]        
+        last_price = train_set["prediction_row"].Open.values
+        last_price = last_price[0]
+        open_time = train_set["prediction_row"].Open_time.values
+        open_time = open_time[0]
+        print("Estimating ", coin_name, "Last_price: ", last_price, "Prediction: ", prediction, "Estimated Profit: (%)", prediction/last_price)
+        return {
+                "last_price":last_price,
+                "prediction":prediction,
+                "open_time":open_time
+            }
+    
+    def predictWXGBoost(self , candles , coin_name, number_of_rows = 500):
+        from xgboost import XGBRegressor
+        train_set = self.prepare_for_learning(candles, number_of_rows)
+        xrbreg = XGBRegressor(verbosity=0)
+        xrbreg.fit(train_set["X"],train_set["Y"])
+        prediction = xrbreg.predict(train_set["prediction_row"].values)
+        prediction = prediction[0]        
+        last_price = train_set["prediction_row"].Open.values
+        last_price = last_price[0]
+        open_time = train_set["prediction_row"].Open_time.values
+        open_time = open_time[0]
+        print("Estimating ", coin_name, "Last_price: ", last_price, "Prediction: ", prediction, "Estimated Profit: (%)", prediction/last_price)
+        return {
+                "last_price":last_price,
+                "prediction":prediction,
+                "open_time":open_time
+            }
+    
+    def predictWLogisticRegression(self , candles , coin_name, number_of_rows = 500):        
+        from sklearn.linear_model import LinearRegression
+        train_set = self.prepare_for_learning(candles, number_of_rows)
+        lr = LinearRegression()
+        lr.fit(train_set["X"],train_set["Y"])
+        prediction = lr.predict(train_set["prediction_row"].values)
+        prediction = prediction[0]        
+        last_price = train_set["prediction_row"].Open.values
+        last_price = last_price[0]
+        open_time = train_set["prediction_row"].Open_time.values
+        open_time = open_time[0]
+        print("Estimating ", coin_name, "Last_price: ", last_price, "Prediction: ", prediction, "Estimated Profit: (%)", prediction/last_price)
+        return {
+                "last_price":last_price,
+                "prediction":prediction,
+                "open_time":open_time
+            }
+    
+    def predictWSVM(self , candles , coin_name, number_of_rows = 500):        
+        from sklearn.svm import SVR
+        train_set = self.prepare_for_learning(candles, number_of_rows)
+        svr = SVR(kernel="rbf")
+        svr.fit(train_set["X"],train_set["Y"])
+        prediction = svr.predict(train_set["prediction_row"].values)
         prediction = prediction[0]        
         last_price = train_set["prediction_row"].Open.values
         last_price = last_price[0]

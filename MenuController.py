@@ -12,6 +12,7 @@ from Bot import Bot
 from Calculations import Calculations as Calc
 from BinanceBotMailer import BinanceBotMailer as BBM
 import re
+import os
 import shutil
 from requests import get
 
@@ -109,7 +110,8 @@ class Controller:
         confirm = input("Your all parameters will be reset. Do yo want to proceed? Y/N \n")
         if confirm.upper() == "Y":
             DB().reset_parameters()
-            shutil.rmtree('logs')
+            if os.path.exists('logs') and os.path.isdir('logs'):
+                shutil.rmtree('logs')
             print("All parameters erased.")
             
 

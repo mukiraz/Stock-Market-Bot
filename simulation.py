@@ -18,9 +18,9 @@ from sklearn.metrics import mean_squared_error
 
 currency = "AVAXUSDT"
 interval = "1m"
-start = "01 Jan 2022"
-end = "05 Jan 2022"
-number_of_rows = [2]
+start = "03 Jan 2022"
+end = "04 Jan 2022"
+number_of_rows = [2,5,10,50,100,200]
 predict = 0
 shot = 50
 y_actual = []
@@ -45,7 +45,7 @@ candles = CS.convert_to_float(candles)
 for j in number_of_rows:
     for i in range(shot):
         df500=candles.iloc[i:500+i].reset_index(drop=True)
-        values = CP().predictWRandomForest(df500,currency,j)
+        values = CP().predictWSVM(df500,currency,j)
         y_actual.append(values["last_price"])
         y_predicted.append(values["prediction"])
         xxx = df500.Close[-1:]
