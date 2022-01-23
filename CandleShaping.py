@@ -55,7 +55,3 @@ class CandleShaping():
         candles500 = pd.concat([candles,rsi,macd,bollinger], axis=1, join='inner')
         return candles500.dropna().reset_index(drop=True)
     
-    #This method makes all candle values numeric
-    def make_numeric(candles):
-        candles = candles.drop("Open_time_str",axis=1)
-        return CandleShaping.convert_to_float(candles)

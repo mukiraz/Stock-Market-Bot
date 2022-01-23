@@ -41,7 +41,11 @@ candles = candles.drop("Open_time_str",axis=1)
 
 candles = CS.convert_to_float(candles)
 
+candles2 = client.get_candels(currency,interval)
 
+candles2 = CS.convert_to_float(candles2)
+
+"""
 for j in number_of_rows:
     for i in range(shot):
         df500=candles.iloc[i:500+i].reset_index(drop=True)
@@ -61,6 +65,7 @@ for j in number_of_rows:
 
 
 print(results)
+"""
 
 
 
