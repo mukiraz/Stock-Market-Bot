@@ -151,7 +151,7 @@ class Bot:
         return calculated_order["average"]
     
     def sell_coin_exceeds_stop_loss(self,coin_name, parameters, last_price, prediction):
-        stop_price = self.average_bought * (1 + parameters["stop_loss_limit"])
+        stop_price = self.average_bought * (1 - parameters["stop_loss_limit"])
         profit_price = self.average_bought * (1 + parameters["profit_limit"])
         while int(self.next_close_time) > self.client.get_server_time():
             average =float(self.client.get_avg_price(symbol = coin_name)["price"])
