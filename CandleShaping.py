@@ -57,4 +57,5 @@ class CandleShaping():
     
     #This method makes all candle values numeric
     def make_numeric(candles):
-        return Indicators(candles)
+        candles = candles.drop("Open_time_str",axis=1)
+        return CandleShaping.convert_to_float(candles)
