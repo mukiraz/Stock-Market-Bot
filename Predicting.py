@@ -15,8 +15,8 @@ class CoinPredictors:
     def prepare_for_learning(self,candles, number_of_rows):
         candles = candles.drop(['Close_time','Ignore.'], axis=1)        
         #candles500=CS.add_rsi_macd_bollinger(candles)
-        candles500 = candles
-        close=candles500.Close        
+        candles500 = CS.make_numeric(candles)
+        close=candles500.Close
         if number_of_rows == 500:
             train_rows=candles500.iloc[0:(len(candles500)-1)]
             close_shifted=close.shift(-1).dropna().reset_index(drop=True)

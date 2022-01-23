@@ -48,9 +48,13 @@ class CandleShaping():
     
     # This method adds rsi, macd and bollinger band values to candle dataframe.
     def add_rsi_macd_bollinger(candles):
-        ind=Indicators(candles)
-        rsi=ind.calculateRSI()
-        bollinger=ind.calculateBollinger()
-        macd=ind.calculateMACD()
-        candles500=pd.concat([candles,rsi,macd,bollinger], axis=1, join='inner')
+        ind = Indicators(candles)
+        rsi = ind.calculateRSI()
+        bollinger = ind.calculateBollinger()
+        macd = ind.calculateMACD()
+        candles500 = pd.concat([candles,rsi,macd,bollinger], axis=1, join='inner')
         return candles500.dropna().reset_index(drop=True)
+    
+    #This method makes all candle values numeric
+    def make_numeric(candles):
+        return Indicators(candles)
