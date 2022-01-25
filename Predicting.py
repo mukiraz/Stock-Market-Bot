@@ -13,7 +13,7 @@ from CandleShaping import CandleShaping as CS
 class CoinPredictors:
     
     def prepare_for_learning(self,candles, number_of_rows):
-        candles = candles.drop(['Close_time','Ignore.'], axis=1)        
+        candles = candles.drop(['Close_time','Ignore.'], axis=1)
         #candles500=CS.add_rsi_macd_bollinger(candles)
         candles500 = CS.convert_to_float(candles)
         close=candles500.Close
@@ -25,11 +25,11 @@ class CoinPredictors:
             close_shifted = close.shift(-1).dropna().reset_index(drop=True)
             close_shifted = close_shifted.iloc[(len(candles500)-1-number_of_rows):(len(candles500)-1)]
         prediction_row=candles500.iloc[-1:]
-        X=train_rows.values
-        Y=close_shifted.values
+        X = train_rows.values
+        Y = close_shifted.values
         prediction_row = prediction_row
         return {
-              "X":X,
+              "X":train_rows,
               "Y":Y,
               "prediction_row":prediction_row
             }
@@ -70,7 +70,7 @@ class CoinPredictors:
                 "open_time":open_time
             }
     
-    def predictWLogisticRegression(self , candles , coin_name, number_of_rows = 500):        
+    def predictWLogisticRegression(self , candles , coin_name, number_of_rows = 500):
         from sklearn.linear_model import LinearRegression
         train_set = self.prepare_for_learning(candles, number_of_rows)
         lr = LinearRegression()
@@ -92,8 +92,14 @@ class CoinPredictors:
         from sklearn.svm import SVR
         train_set = self.prepare_for_learning(candles, number_of_rows)
         svr = SVR(kernel="rbf")
-        svr.fit(train_set["X"],train_set["Y"])
-        prediction = svr.predict(train_set["prediction_row"].values)
+        X_trn = train_set["X"]
+        X_trn = X_trn.drop(['Open_time'], axis=1)
+        X_trn = X_trn.values
+        svr.fit(X_trn,train_set["Y"])
+        X_predict = train_set["prediction_row"]
+        X_predict = X_predict.drop(['Open_time'], axis=1)
+        X_predict = X_predict.values
+        prediction = svr.predict(X_predict)
         prediction = prediction[0]        
         last_price = train_set["prediction_row"].Open.values
         last_price = last_price[0]
@@ -103,5 +109,7 @@ class CoinPredictors:
         return {
                 "last_price":last_price,
                 "prediction":prediction,
-                "open_time":open_time
+                "open_time":open_time,
+                "X":X_trn,
+                "Y":train_set["Y"]
             }

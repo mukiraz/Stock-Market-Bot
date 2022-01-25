@@ -33,10 +33,10 @@ class Bot:
     
     def start_bot(self):
         parameters = DB().get_parameters()
-        self.next_close_time = Calc().calculate_open_close_time(DB().get_parameter_by_name("interval"),self.client.get_server_time())["close_time"]
+        self.next_close_time = Calc().calculate_open_close_time(parameters["interval"],self.client.get_server_time())["close_time"]
         coin_name=""
         DB().update_data("parameters", ["has_cash","has_coin"], [1,0])
-        assets=self.client.get_asset_balance(asset=parameters["cash_type"])
+        assets = self.client.get_asset_balance(asset = parameters["cash_type"])
         total_cash_start = float(assets["free"])
         cash_limit = total_cash_start - (parameters["cash_start"] - parameters["cash_limit"])
         while True:
@@ -48,7 +48,7 @@ class Bot:
                         print("Because of the loss, the system stopped.")
                         break                    
                     coin_name = self.decide_best_coin(parameters)
-                    if self.best_price_offer[coin_name] > 1:
+                    if self.best_price_offer[coin_name]/2 > 1.001:
                         self.coin = parameters["cash"] / self.last_prices[coin_name]
                         self.coin = Calc.normalize_coin(self.client.get_symbol_info(coin_name), self.coin, "buy")
                         print("Average price from binance", self.client.get_avg_price(symbol = coin_name)["price"])

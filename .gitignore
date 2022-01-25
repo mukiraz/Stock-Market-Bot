@@ -1,0 +1,4 @@
+*.csv
+/root/
+    .gitignore
+    /AVAX/

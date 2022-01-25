@@ -148,22 +148,23 @@ class BinanceCommunication():
         except ConnectionError:
             BBE.ConnectionErrorException(function_name)
             
-    def get_candels(self,symbol,interval,*defreturn):
+    def get_candels(self, symbol, interval, insert_open_time_str = False, *defreturn):
         function_name="get_candels"
         parameters = {
             "symbol":symbol,
             "interval":interval
             }
         try:
-            intervals=self.createintervals()
-            interval=intervals[interval]
-            candles = self.client.get_klines(symbol=symbol, interval=interval)
-            candles=CS.get_candle_dataframe(candles)
-            #candles['Open time'] = pd.to_datetime(candles['Open time'], unit='ms')
+            intervals = self.createintervals()
+            interval = intervals[interval]
+            klines = self.client.get_klines(symbol=symbol, interval=interval)
+            klines = CS.get_candle_dataframe(klines)
+            if insert_open_time_str:
+                klines['Open_time_str'] = CS.to_dateTime(klines)
             if len(defreturn)==0:
-                return candles
+                return klines
             else:
-                return candles.loc[:,defreturn]            
+                return klines.loc[:,defreturn]            
         except BinanceRequestException as e:
             BBE.BinanceRequestExceptionExc(function_name, e.message, parameters)
         except BinanceAPIException as e:
@@ -171,7 +172,7 @@ class BinanceCommunication():
         except ConnectionError:
             BBE.ConnectionErrorException(function_name)
 
-    def get_historic_candles(self,symbol,interval,start,end,*defreturn):
+    def get_historic_candles(self, symbol, interval, start, end, insert_open_time_str = False, *defreturn):
         function_name="get_historic_candles"
         parameters ={
             "symbol":symbol,
@@ -180,11 +181,12 @@ class BinanceCommunication():
             "end":end
             }
         try:
-            intervals=self.createintervals()
+            intervals = self.createintervals()
             interval=intervals[interval]
             klines = self.client.get_historical_klines(symbol, interval, start, end)
-            klines=CS.get_candle_dataframe(klines)
-            klines['Open_time_str'] = CS.to_dateTime(klines)
+            klines = CS.get_candle_dataframe(klines)
+            if insert_open_time_str:
+                klines['Open_time_str'] = CS.to_dateTime(klines)
             if len(defreturn)==0:
                 return klines
             else:
