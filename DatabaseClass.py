@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Dec  3 23:03:56 2021
+Created on Sun May 29 15:42:26 2022
 
-@author: mukir
+@author: Murat Ugur KIRAZ
 """
 
 import sqlite3
@@ -94,3 +94,4 @@ class DatabaseClass(object):
     def __del__(self):
         self.__db_connection.commit()
         self.__db_connection.close()
+

@@ -1,10 +1,12 @@
+# -*- coding: utf-8 -*-
 """
-Created on Wed Nov  3 17:31:40 2021
+Created on Tue Jun  7 03:21:40 2022
 
 This class logs events and errors.
 
-@author: mukir
+@author: Murat Uğur KİRAZ
 """
+
 from datetime import date,datetime
 from pathlib import Path
 
@@ -38,7 +40,7 @@ class Logging():
         self.message=str(message)
         
     # This method logs events.
-    def logEvent(self,current_time=""):
+    def logEvent(self, current_time=""):
         if current_time=="":            
             current_time=str(datetime.now(tz=None))            
         file=open(self.operationfile, "a")
@@ -47,9 +49,9 @@ class Logging():
 
     # This method logs errors.
     def logBinanceError(self, function_name, status_code = "", current_time = ""):
-        if current_time=="":            
-            current_time=str(datetime.now(tz=None))          
-        file=open(self.errorfile, "a")
+        if current_time == "":            
+            current_time = str(datetime.now(tz=None))          
+        file=open(self. errorfile, "a")
         file.write(current_time +
                    "  function_name: " + function_name +
                    " message: " + self.message +

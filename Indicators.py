@@ -1,68 +1,138 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Dec  3 21:24:57 2021
+Created on Sun May 29 19:16:44 2022
 
-This python file calculates indicators.
-
-@author: Murat Uğur KİRAZ
+@author: Murat Ugur KIRAZ
 """
-
 import pandas as pd
-import numpy as np
+import pandas_ta as ta
+from constant import Source
 
 class Indicators():
-    def __init__(self,candles):
-    # In construction, all string expressions are converted to the floats.
-        for i in range(1,len(candles.columns)):            
-           candles.iloc[:,i]=candles.iloc[:,i].apply(pd.to_numeric, errors='coerce', downcast="float" )
-        self.candles=candles
+    """
+    The indicators are calculated by pandas_ta library. The documentation is below:
+    
+    https://github.com/twopirllc/pandas-ta
+    
+    In this class, the undefined indicators in pandas_ta are defined.
+    
+    """
+    
+    def __init__(self, candles):
+        self.candles = candles
         
-    #  This method calculates MACD 
-    def calculateMACD(self,column="Close",short=12,long=26,signal_param=9):
-        candles=self.candles[column]
-        shortEMA=candles.ewm(span=short,adjust=False).mean()
-        longEMA=candles.ewm(span=long,adjust=False).mean()
-        MACD=shortEMA-longEMA
-        macd_array=np.array(MACD)
-        df1=pd.DataFrame(macd_array,columns=["MACD"])
-        signal=MACD.ewm(span=signal_param,adjust=False).mean()
-        signal_array=np.array(signal)
-        df2=pd.DataFrame(signal_array,columns=["signal"])
-        df=pd.concat([df1, df2], axis=1, join='inner')
+    def source(self, source:Source):
+        """
+        This method is used for source parameter of an indicator.
+
+        Parameters
+        ----------
+        source : Source class from constant module
+                OPEN, CLOSE, LOW, HIGH, HL2, HLC3, OHLC4, HLCC4
+                HL2 = (High + Low) / 2
+                HLC3 = (High + Low + Close) / 3
+                OHLC4 = (Open + High + Low + Close) / 4
+                HLCC4 = (High + Low + Close + Close) / 4
+        Returns
+        -------
+        TYPE Series object of pandas.core.series
+            It returns a pandas series with one column.
+
+        """
+        source = source.lower()
+        if source == "close":
+            return self.candles.Close
+        elif source == "open":
+            return self.candles.Open
+        elif source == "high":
+            return self.candles.High
+        elif source == "low":
+            return self.candles.Low
+        elif source == "hl2":
+            self.candles = (self.candles.High + self.candles.Low ) / 2
+            return pd.Series(self.candles['hl2'])
+        elif source == "hlc3":
+            self.candles['hlc3'] = ( self.candles.High + self.candles.Close + self.candles.Low ) / 3 
+            return pd.Series(self.candles['hlc3'])
+        elif source == "ohlc4":
+            self.candles['ohlc4'] = ( self.candles.Open + self.candles.High + self.candles.Close + self.candles.Low ) / 4
+            return pd.Series(self.candles['ohlc4'])
+        elif source == "hlcc4":
+            self.candles['hlcc4'] = ( self.candles.Open + self.candles.High + self.candles.Close + self.candles.Low ) / 4
+            return pd.Series(self.candles['hlcc4'])
+
+    
+    def insert_signal_to_df(self,*kwargs):
+        """        
+
+        Parameters
+        ----------
+        *kwargs : TYPE list
+            DESCRIPTION
+            List of the signals and candles 
+            USAGE [candles,rsi,macd,bollinger]
+
+        Returns
+        -------
+        df : TYPE pandas dataframe
+            DESCRIPTION
+            Returns the added signals.
+
+        """
+        return pd.concat(kwargs, axis=1, join='inner')
+    
+    def getATR(self, period):
+        return self.candles.ta.atr(period)
+    
+    def getATRBands(self, atrPeriod : int =3, atrMultiplierUpper : float = 2.5, srcUpper : Source = Source.CLOSE, atrMultiplierLower : float = 2.5, srcLower : Source = Source.CLOSE):
+        """
+        
+
+        Parameters
+        ----------
+        atrPeriod : int, optional
+            DESCRIPTION. The default is 3.
+        atrMultiplierUpper : float, optional
+            DESCRIPTION. The default is 2.5.
+        srcUpper : Source, optional
+            DESCRIPTION. The default is Source.CLOSE.
+        atrMultiplierLower : float, optional
+            DESCRIPTION. The default is 2.5.
+        srcLower : Source, optional
+            DESCRIPTION. The default is Source.CLOSE.
+
+        Returns
+        -------
+        df : TYPE
+            DESCRIPTION.
+
+        """
+        atr = self.candles.ta.atr(atrPeriod)
+        atrupper = self.source(srcUpper) + atr * atrMultiplierUpper
+        atrlower = self.source(srcLower) - atr * atrMultiplierLower
+        atrBands = {'atrupper':atrupper,
+                    'atrlower':atrlower}
+        df = pd.DataFrame(atrBands, index=None)
         return df
     
-    # This method calculates RSI
-    def calculateRSI(self,column="Close",period=14):
-        candles=self.candles[column]
-        candles = candles.apply(pd.to_numeric, errors='coerce', downcast="float" )
-        delta = candles.diff()
-        up = delta.clip(lower=0)
-        down = -1*delta.clip(upper=0)
-        ema_up = up.ewm(com=(period-1), adjust=False).mean()
-        ema_down = down.ewm(com=(period-1), adjust=False).mean()
-        rs = ema_up/ema_down
-        rsi_array=list()
-        rs=rs.to_numpy()
-        for i in rs:
-            try:
-                rsi_array.append(100-(100/(1+i)))
-            except TypeError:
-                rsi_array.append(0)
+    def getMACD(self,  slow: int = 26, fast: int = 12, signal: int = 9, fillna: bool = False):
+        signals = self.candles.ta.macd(slow, fast, signal, fillna)
+        signals.columns.values[0] = "MACD"
+        signals.columns.values[1] = "Histogram"
+        signals.columns.values[2] = "Signal"
+        return signals
+    
+    def getEMA(self, length: int = 14,  source : Source = Source.CLOSE):
+        ema = self.candles.ta.ema(length = length)
+        arr = ema.to_numpy() 
+        return pd.DataFrame(arr, columns=["EMA"])
 
-        rsi_array=np.array(rsi_array)
-        df=pd.DataFrame(rsi_array,columns=["RSI"])
-        
-        return df
-    # This method calculates Bollinger Bands.
-    def calculateBollinger(self,column="Close",lenght=20,st_dev=2):
-        candles=self.candles[column]
-        sma = np.array(candles.rolling(window=lenght).mean())
-        df_sma=pd.DataFrame(sma,columns=["sma"])
-        rstd = np.array(candles.rolling(window=lenght).std())
-        df_rstd=pd.DataFrame(rstd,columns=["rstd"])
-        upper_band = np.array(sma + st_dev * rstd)
-        df_upper_band=pd.DataFrame(upper_band,columns=["upper_band"])
-        lower_band =  np.array(sma - st_dev * rstd)
-        df_lower_band=pd.DataFrame(lower_band,columns=["lower_band"])
-        df=pd.concat([df_sma, df_rstd,df_upper_band,df_lower_band], axis=1, join='inner')
-        return df
+    
+    def getRSI(self, length = 14):
+        rsi = self.candles.ta.rsi(length = length)
+        arr = rsi.to_numpy() 
+        return pd.DataFrame(arr, columns=["RSI"])
+    
+    
+    
+
