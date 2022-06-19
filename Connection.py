@@ -43,6 +43,7 @@ class BinanceConnection(IConnection):
     """
     This class connects with the Binance crypto stock market.
     """
+    CONST_COMISSION_RATE = 0.001
     
     def __init__(self, api_key, secret_key):
         """
@@ -109,6 +110,9 @@ class HuobiConnection(IConnection):
     """
     This class connects with the Huobi crypto stock market.
     """
+    
+    CONST_COMISSION_RATE = 0.001
+    
     def __init__(self, api_key, secret_key):
         self.__api_key = api_key
         self.__secret_key = secret_key

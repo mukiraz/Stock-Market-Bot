@@ -1,4 +1,4 @@
-#Stock Market Bot
+# Stock Market Bot
 
 This bot is written in python language.
 
