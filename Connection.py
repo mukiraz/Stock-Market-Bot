@@ -44,7 +44,8 @@ class BinanceConnection(IConnection):
     This class connects with the Binance crypto stock market.
     """
     CONST_COMISSION_RATE = 0.001
-    
+    CONST_DAILY_INTEREST_RATE = 0.0001
+    CONST_YEARLY_INTEREST_RATE = 0.0365
     def __init__(self, api_key, secret_key):
         """
         
@@ -103,6 +104,35 @@ class BinanceConnection(IConnection):
             BBE.BinanceAPIExceptionExc(function_name, e.status_code, e.message, parameters)
         except ConnectionError:
             BBE.ConnectionErrorException(function_name)
+            
+    def normalize_coin(self, symbol:str, amount:float, operation:str):
+        #from binance.helpers import round_step_size
+        symbol_info = self.client.get_symbol_info(symbol)
+        tick_size = symbol_info["filters"][2]["stepSize"]
+        if float(tick_size)<1:
+            for i in range(len(tick_size)):
+                if tick_size[i]=="1":
+                    precision =(-1,i-1)
+        else:
+            for i in range(len(tick_size)):
+                if tick_size[i]=="1":
+                    precision =(1,i+1)
+        
+        if operation == "buy":
+            if precision[0]==-1:
+                amt_str = "{:0.0{}f}".format(amount, precision[1])
+            else:
+                amt_str = str(amount)
+        elif operation == "sell":
+            if precision[0]==-1:
+                amount = str(amount)
+                dot = amount.index(".") + 1
+                amt_str = amount[0:dot+precision[1]]
+            else:
+                amt_str = str(amount)
+        
+        return float(amt_str)
+        
             
             
 

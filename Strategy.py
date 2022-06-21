@@ -38,24 +38,26 @@ class Strategy():
         decisionSignal = {"Decision":decision}
         return pd.DataFrame(decisionSignal)
         
-    def MACDS_RSI_EMA_Strategy(self):
-        MACD = Ind(self.candles).getMACD()
-        atrBands = Ind(self.candles).getATRBands(atrPeriod=14, atrMultiplierUpper = 1.4, srcUpper = Source.CLOSE, atrMultiplierLower = 1.4, srcLower = Source.CLOSE)
-        ema = Ind(self.candles).getEMA(length = 200)
-        rsi = Ind(self.candles).getRSI(length = 14)
-        candles = CS.to_dateTime(self.candles)
-        decisionSignal = self.crossOver(MACD["MACD"], MACD["Signal"])
-        cand = pd.concat([candles, MACD, atrBands, ema, rsi, decisionSignal], axis=1, join='inner')  
-        
-        for i in range(len(cand)):
-            if (cand["Decision"][i] == "Long") and (candles["Close"][i] > ema["EMA"][i]) and (rsi["RSI"][i] > 50):
-                print("Decision: {0}, 200EMA: {1} , RSI : {2}, Close: {3} ".format(cand["Decision"][i], cand["EMA"][i], cand["RSI"][i], cand["Close"][i]))
-                cand.at[i, 'Decision'] = "Long"
-            elif (cand["Decision"][i] == "Short") and (candles["Close"][i] < ema["EMA"][i]) and (rsi["RSI"][i] < 50):
-                print("Decision: {0}, 200EMA: {1} , RSI : {2}, Close: {3} ".format(cand["Decision"][i], cand["EMA"][i], cand["RSI"][i], cand["Close"][i]))
-                cand.at[i, 'Decision'] = "Short"
-            else:                
-                cand.at[i, 'Decision'] = np.nan
-                
-        return cand
+    def MACDS_RSI_EMA_Strategy(self, EMAlength:int = 200, RSIlength:int = 14):
+        try:
+            MACD = Ind(self.candles).getMACD()
+            atrBands = Ind(self.candles).getATRBands(atrPeriod=14, atrMultiplierUpper = 1.4, srcUpper = Source.CLOSE, atrMultiplierLower = 1.4, srcLower = Source.CLOSE)
+            ema = Ind(self.candles).getEMA(length = EMAlength)
+            rsi = Ind(self.candles).getRSI(length = RSIlength)
+            candles = CS.to_dateTime(self.candles)
+            decisionSignal = self.crossOver(MACD["MACD"], MACD["Signal"])
+            cand = pd.concat([candles, MACD, atrBands, ema, rsi, decisionSignal], axis=1, join='inner')  
+            
+            for i in range(len(cand)):
+                if (cand["Decision"][i] == "Long") and (candles["Close"][i] > ema["EMA"][i]) and (rsi["RSI"][i] > 50):
+                    cand.at[i, 'Decision'] = "Long"
+                elif (cand["Decision"][i] == "Short") and (candles["Close"][i] < ema["EMA"][i]) and (rsi["RSI"][i] < 50):
+                    cand.at[i, 'Decision'] = "Short"
+                else:                
+                    cand.at[i, 'Decision'] = np.nan
+                    
+            return cand
+        except ValueError:
+            print("Your candle stick rows should be more than {}".format(EMAlength))
+
         

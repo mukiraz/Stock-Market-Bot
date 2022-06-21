@@ -1,0 +1,7 @@
+python-binance
+pandas
+numpy
+sqlite3
+pyfiglet==0.7
+termcolor
+pandas_ta
