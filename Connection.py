@@ -109,14 +109,17 @@ class BinanceConnection(IConnection):
         #from binance.helpers import round_step_size
         symbol_info = self.client.get_symbol_info(symbol)
         tick_size = symbol_info["filters"][2]["stepSize"]
+        operation = operation.lower()
         if float(tick_size)<1:
             for i in range(len(tick_size)):
                 if tick_size[i]=="1":
                     precision =(-1,i-1)
+                    break
         else:
             for i in range(len(tick_size)):
                 if tick_size[i]=="1":
                     precision =(1,i+1)
+                    break
         
         if operation == "buy":
             if precision[0]==-1:

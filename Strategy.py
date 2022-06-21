@@ -49,9 +49,17 @@ class Strategy():
             cand = pd.concat([candles, MACD, atrBands, ema, rsi, decisionSignal], axis=1, join='inner')  
             
             for i in range(len(cand)):
+                """
                 if (cand["Decision"][i] == "Long") and (candles["Close"][i] > ema["EMA"][i]) and (rsi["RSI"][i] > 50):
                     cand.at[i, 'Decision'] = "Long"
                 elif (cand["Decision"][i] == "Short") and (candles["Close"][i] < ema["EMA"][i]) and (rsi["RSI"][i] < 50):
+                    cand.at[i, 'Decision'] = "Short"
+                else:                
+                    cand.at[i, 'Decision'] = np.nan
+                """
+                if (cand["Decision"][i] == "Long") and (cand["MACD"][i] < 0):
+                    cand.at[i, 'Decision'] = "Long"
+                elif (cand["Decision"][i] == "Short") and (cand["MACD"][i] > 0):
                     cand.at[i, 'Decision'] = "Short"
                 else:                
                     cand.at[i, 'Decision'] = np.nan
