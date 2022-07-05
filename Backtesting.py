@@ -20,8 +20,8 @@ import pandas as pd
 start_cash = 1000
 parameters = {
     "total_cash":0,
-    "interval":"5m",
-    "symbol":"avaxusdt",
+    "interval":"15m",
+    "symbol":"btcusdt",
     "cash":start_cash,
     "risk_percentage":0.01,
     "risk_reward_ratio":1.5,
@@ -58,7 +58,10 @@ df_transactions = pd.DataFrame(columns = [
 
 Binance = BC("","")
 
-CandleData = Binance.get_candles(parameters["symbol"],parameters["interval"], 1200)
+#CandleData = Binance.get_candles(parameters["symbol"],parameters["interval"], 1200)
+
+CandleData = Binance.get_historic_candles(parameters["symbol"], parameters["interval"], "1 Jan,2022")
+
 
 candles = ST(CandleData).MACDS_RSI_EMA_Strategy()
 
@@ -166,6 +169,7 @@ for i in range(len(candles)):
                                )
             
             df_transactions = df_transactions.append(data, ignore_index = True)
+            print("Long bought",parameters["total_cash"])
             continue
         elif candles["Decision"][i] == "Short":
             parameters["position"] = "Short"
@@ -188,6 +192,7 @@ for i in range(len(candles)):
                                )
             
             df_transactions = df_transactions.append(data, ignore_index = True)
+            print("Short bought",parameters["total_cash"])
             continue
         else:
             continue
@@ -210,6 +215,7 @@ for i in range(len(candles)):
                                )
                 
                 df_transactions = df_transactions.append(data, ignore_index = True)
+                print("Long sold. Profit!", parameters["total_cash"])
                 continue
             elif candles["Low"][i] <= parameters["stop_price"]:
                 #loss
@@ -226,6 +232,7 @@ for i in range(len(candles)):
                                fee, "-", "-", parameters["total_cash"], "Loss!"
                                )
                 df_transactions = df_transactions.append(data, ignore_index = True)
+                print("Long sold. Loss!", parameters["total_cash"])
                 continue
         elif parameters["position"] == "Short":
             if candles["High"][i] >= parameters["stop_price"]:
@@ -243,6 +250,7 @@ for i in range(len(candles)):
                                fee, "-", "-", parameters["total_cash"], "Loss!"
                                )
                 df_transactions = df_transactions.append(data, ignore_index = True)
+                print("Short sold. Loss!", parameters["total_cash"])
                 continue
             elif candles["Low"][i] <= parameters["sell_price"]:
                 #profit
@@ -259,43 +267,13 @@ for i in range(len(candles)):
                                fee, "-", "-", parameters["total_cash"], "Profit!"
                                )
                 df_transactions = df_transactions.append(data, ignore_index = True)
+                print("Short sold. Profit!", parameters["total_cash"])
                 continue
                 
-                
-                
-                
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+            
+profit = df_transactions['explanation'].value_counts()['Profit!']
+loss = df_transactions['explanation'].value_counts()['Loss!']
 
+win_rate = profit / (profit + loss)
+
+print(win_rate)

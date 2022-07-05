@@ -41,7 +41,7 @@ class Strategy():
     def MACDS_RSI_EMA_Strategy(self, EMAlength:int = 200, RSIlength:int = 14):
         try:
             MACD = Ind(self.candles).getMACD()
-            atrBands = Ind(self.candles).getATRBands(atrPeriod=14, atrMultiplierUpper = 1.4, srcUpper = Source.CLOSE, atrMultiplierLower = 1.4, srcLower = Source.CLOSE)
+            atrBands = Ind(self.candles).getATRBands(atrPeriod=3, atrMultiplierUpper = 2.5, srcUpper = Source.CLOSE, atrMultiplierLower = 2.5, srcLower = Source.CLOSE)
             ema = Ind(self.candles).getEMA(length = EMAlength)
             rsi = Ind(self.candles).getRSI(length = RSIlength)
             candles = CS.to_dateTime(self.candles)
@@ -49,6 +49,7 @@ class Strategy():
             cand = pd.concat([candles, MACD, atrBands, ema, rsi, decisionSignal], axis=1, join='inner')  
             
             for i in range(len(cand)):
+                
                 """
                 if (cand["Decision"][i] == "Long") and (candles["Close"][i] > ema["EMA"][i]) and (rsi["RSI"][i] > 50):
                     cand.at[i, 'Decision'] = "Long"
@@ -57,12 +58,26 @@ class Strategy():
                 else:                
                     cand.at[i, 'Decision'] = np.nan
                 """
+                
+                """
+                
+                if (cand["Decision"][i] == "Long") and (candles["Close"][i] > ema["EMA"][i]):
+                    cand.at[i, 'Decision'] = "Long"
+                elif (cand["Decision"][i] == "Short") and (candles["Close"][i] < ema["EMA"][i]):
+                    cand.at[i, 'Decision'] = "Short"
+                else:                
+                    cand.at[i, 'Decision'] = np.nan
+                    
+                """
+
+                
                 if (cand["Decision"][i] == "Long") and (cand["MACD"][i] < 0):
                     cand.at[i, 'Decision'] = "Long"
                 elif (cand["Decision"][i] == "Short") and (cand["MACD"][i] > 0):
                     cand.at[i, 'Decision'] = "Short"
                 else:                
                     cand.at[i, 'Decision'] = np.nan
+                
                     
             return cand
         except ValueError:

@@ -78,6 +78,21 @@ class BinanceConnection(IConnection):
             BBE.ConnectionErrorException(function_name)
             self.__init__(self.api_key, self.secret_key)
             
+    def make_candlestick(self, candles):
+        import numpy as np
+        import pandas as pd
+        array = np.array(candles)
+        candles = pd.DataFrame(array,columns=['Id','Open','High','Low','Close','Volume','Close_time','Quote_asset_volume','Number_of_trades','Taker_buy_base_asset_volume','Taker_buy_quote_asset_volume','Ignore.',])
+        candles = candles.iloc[:, lambda df: [0, 1, 2, 3, 4, 5]]
+        candles = candles[['Id','Open','Close','High','Low','Volume']]
+        candles = CS().convert_to_float(candles)
+        candles["Volume"] = candles["Volume"] * 10000
+        candles['Id'] = candles['Id'].str.slice(0, 10)
+        candles = candles.astype({'Id':'int'})
+        return candles
+        
+        
+        
     def get_candles(self, symbol, interval, limit = 500):
         function_name = "get_candels"
         parameters = {
@@ -85,30 +100,33 @@ class BinanceConnection(IConnection):
             "interval":interval
             }
         try:
-            import numpy as np
-            import pandas as pd
+            
             symbol = symbol.upper()
             candles = self.client.get_klines(symbol=symbol, interval=interval, limit=limit) 
-            array = np.array(candles)
-            candles = pd.DataFrame(array,columns=['Id','Open','High','Low','Close','Volume','Close_time','Quote_asset_volume','Number_of_trades','Taker_buy_base_asset_volume','Taker_buy_quote_asset_volume','Ignore.',])
-            candles = candles.iloc[:, lambda df: [0, 1, 2, 3, 4, 5]]
-            candles = candles[['Id','Open','Close','High','Low','Volume']]
-            candles = CS().convert_to_float(candles)
-            candles["Volume"] = candles["Volume"] * 10000
-            candles['Id'] = candles['Id'].str.slice(0, 10)
-            candles = candles.astype({'Id':'int'})
+            candles = self.make_candlestick(candles)
             return candles
+            
         except BinanceRequestException as e:
             BBE.BinanceRequestExceptionExc(function_name, e.message, parameters)
         except BinanceAPIException as e:
             BBE.BinanceAPIExceptionExc(function_name, e.status_code, e.message, parameters)
         except ConnectionError:
             BBE.ConnectionErrorException(function_name)
+    
+    def get_historic_candles(self, symbol, interval, start_date, end_date = None):
+        symbol = symbol.upper()
+        if end_date == None:
+            candles = self.client.get_historical_klines(symbol, interval, start_date)
+        else:
+            candles = self.client.get_historical_klines(symbol, interval, start_date, end_date)
+        candles = self.make_candlestick(candles)
+        return candles
             
     def normalize_coin(self, symbol:str, amount:float, operation:str):
         #from binance.helpers import round_step_size
-        symbol_info = self.client.get_symbol_info(symbol)
-        tick_size = symbol_info["filters"][2]["stepSize"]
+        #symbol_info = self.client.get_symbol_info(symbol)
+        #tick_size = symbol_info["filters"][2]["stepSize"]
+        tick_size = '0.00001'
         operation = operation.lower()
         if float(tick_size)<1:
             for i in range(len(tick_size)):
