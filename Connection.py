@@ -19,8 +19,7 @@ class IConnection(metaclass=abc.ABCMeta):
     """
     This is an interface. 
     This interface contains basic functions of the  connection with the stock market.
-    The aim of this interface:
-        Creating standart methods for stock markets.
+    The aim of this interface is creating standart methods for stock markets.
     """
     
     @classmethod
@@ -42,10 +41,12 @@ class IConnection(metaclass=abc.ABCMeta):
 class BinanceConnection(IConnection):
     """
     This class connects with the Binance crypto stock market.
+    
     """
     CONST_COMISSION_RATE = 0.001
     CONST_DAILY_INTEREST_RATE = 0.0001
     CONST_YEARLY_INTEREST_RATE = 0.0365
+    
     def __init__(self, api_key, secret_key):
         """
         
@@ -60,7 +61,7 @@ class BinanceConnection(IConnection):
         Returns
         -------
         None.
-        This contructor method takes API and Secret key and creates the client object of Binance.
+        This constructor method takes API and Secret key and creates the client object of Binance.
         """
         function_name = "init"
         try:
@@ -68,6 +69,7 @@ class BinanceConnection(IConnection):
             self.api_key = api_key
             self.secret_key = secret_key
             self.client = Client(api_key, secret_key)
+            self.tick_size = ''
             print("Connected to Binance")
         except BinanceRequestException as e:
             BBE.BinanceRequestExceptionExc(function_name, e.message)
@@ -79,6 +81,36 @@ class BinanceConnection(IConnection):
             self.__init__(self.api_key, self.secret_key)
             
     def make_candlestick(self, candles):
+        """ 
+        Parameters
+        ----------
+        candles : TYPE
+            This method takes Binance candlestick data as parameter with the columns below:
+            Id,
+            Open,
+            High,
+            Low,
+            Close,
+            Volume,
+            Close_time,
+            Quote_asset_volume,
+            Number_of_trades,
+            Taker_buy_base_asset_volume,
+            Taker_buy_quote_asset_volume,
+            Ignore.,
+
+        Returns
+        -------
+        candles : TYPE
+           This method returns candlestick data with that columns by converting the string values to float:
+              Id,
+              Open,
+              Close,
+              High,
+              Low,
+              Volume
+
+        """
         import numpy as np
         import pandas as pd
         array = np.array(candles)
@@ -93,7 +125,30 @@ class BinanceConnection(IConnection):
         
         
         
-    def get_candles(self, symbol, interval, limit = 500):
+    def get_candles(self, symbol :str, interval:str, limit:int = 500):
+        """
+        Parameters
+        ----------
+        symbol : str
+            Symbol as btcusdt, ethusdt, avaxusdt...
+        interval : str
+            1m, 3m, 5m, 15m, 30m, 2h, 4h, 6h, 8h, 12h, 1d, 3d, 1w, 1M,
+        limit : int, optional
+            The default is 500.
+            This is the row count of candlestick data
+
+        Returns
+        -------
+        candles : TYPE
+            This method returns candlestick data with that columns by converting the string values to float:
+              Id,
+              Open,
+              Close,
+              High,
+              Low,
+              Volume
+
+        """
         function_name = "get_candels"
         parameters = {
             "symbol":symbol,
@@ -101,8 +156,9 @@ class BinanceConnection(IConnection):
             }
         try:
             
-            symbol = symbol.upper()
-            candles = self.client.get_klines(symbol=symbol, interval=interval, limit=limit) 
+            self.symbol = symbol.upper()        
+            self.tick_size = self.get_tick_size(self.symbol)
+            candles = self.client.get_klines(symbol = self.symbol, interval = interval, limit = limit) 
             candles = self.make_candlestick(candles)
             return candles
             
@@ -113,20 +169,93 @@ class BinanceConnection(IConnection):
         except ConnectionError:
             BBE.ConnectionErrorException(function_name)
     
-    def get_historic_candles(self, symbol, interval, start_date, end_date = None):
-        symbol = symbol.upper()
+    def get_historic_candles(self, symbol:str, interval:str, start_date:str, end_date:str = None):
+        """
+        
+
+        Parameters
+        ----------
+        symbol : str
+            Symbol as btcusdt, ethusdt, avaxusdt...
+        interval : str
+            1m, 3m, 5m, 15m, 30m, 2h, 4h, 6h, 8h, 12h, 1d, 3d, 1w, 1M,
+        start_date : str
+            Start date as '1 Jan, 2022'
+        end_date : str, optional
+            The default is None.
+            If the argument is not given, method returns the candlestick data from start date to now.
+            If end date is given as as '15 Jan, 2022' the method returns the candlestick data from start date to end date.
+
+        Returns
+        -------
+        candles : TYPE
+            his method returns candlestick data with that columns by converting the string values to float:
+              Id,
+              Open,
+              Close,
+              High,
+              Low,
+              Volume
+
+        """
+        self.symbol = symbol.upper()        
+        self.tick_size = self.get_tick_size(self.symbol)
         if end_date == None:
-            candles = self.client.get_historical_klines(symbol, interval, start_date)
+            candles = self.client.get_historical_klines(self.symbol, interval, start_date)
         else:
-            candles = self.client.get_historical_klines(symbol, interval, start_date, end_date)
+            candles = self.client.get_historical_klines(self.symbol, interval, start_date, end_date)
         candles = self.make_candlestick(candles)
         return candles
+    
+    def get_tick_size(self, symbol:str):
+        """
+        
+
+        Parameters
+        ----------
+        symbol : str
+            Symbol, btcusdt, avaxusdt, ethusdt...
+
+        Returns
+        -------
+        tick_size : str
+            This method returns the tick size.
+
+        """
+        symbol_info = self.client.get_symbol_info(symbol)
+        tick_size = symbol_info["filters"][2]["stepSize"]
+        return tick_size
             
     def normalize_coin(self, symbol:str, amount:float, operation:str):
-        #from binance.helpers import round_step_size
-        #symbol_info = self.client.get_symbol_info(symbol)
-        #tick_size = symbol_info["filters"][2]["stepSize"]
-        tick_size = '0.00001'
+        """
+        
+
+        Parameters
+        ----------
+        symbol : str
+            Symbol, btcusdt, avaxusdt, ethusdt...
+        amount : float
+            DESCRIPTION.
+        operation : str
+            only 'buy' and 'sell'
+
+        Returns
+        -------
+        TYPE
+            When buying or selling coin, stock market needs  the exact coin amount.
+            If the calculated amount is 0.000245698745 btc,
+            it should be 0.00024.
+            This method returns the exact coin amount.
+            see https://python-binance.readthedocs.io/en/latest/account.html or
+            https://sammchardy.github.io/binance-order-filters/
+            for detailed information
+
+        """
+        if self.symbol == '':            
+            tick_size = self.get_tick_size(self.symbol)
+        else:
+            tick_size = self.tick_size       
+        
         operation = operation.lower()
         if float(tick_size)<1:
             for i in range(len(tick_size)):
@@ -153,9 +282,6 @@ class BinanceConnection(IConnection):
                 amt_str = str(amount)
         
         return float(amt_str)
-        
-            
-            
 
 class HuobiConnection(IConnection):
     """

@@ -20,8 +20,8 @@ import pandas as pd
 start_cash = 1000
 parameters = {
     "total_cash":0,
-    "interval":"15m",
-    "symbol":"btcusdt",
+    "interval":"5m",
+    "symbol":"avaxusdt",
     "cash":start_cash,
     "risk_percentage":0.01,
     "risk_reward_ratio":1.5,
@@ -59,9 +59,11 @@ df_transactions = pd.DataFrame(columns = [
 Binance = BC("","")
 
 #CandleData = Binance.get_candles(parameters["symbol"],parameters["interval"], 1200)
+print("Getting candlestick data. Please wait...")
 
-CandleData = Binance.get_historic_candles(parameters["symbol"], parameters["interval"], "1 Jan,2022")
+CandleData = Binance.get_historic_candles(parameters["symbol"], parameters["interval"], "1 April, 2022")
 
+print("Candlestick data was taken.")
 
 candles = ST(CandleData).MACDS_RSI_EMA_Strategy()
 

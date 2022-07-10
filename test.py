@@ -1,16 +1,8 @@
 from Connection import BinanceConnection as BC
-from Strategy import Strategy as ST
 
 
+stockBC = BC('','')
 
-stockMarketBC = BC("","")
+candles = stockBC.get_candles("avaxusdt", "15m", limit = 1200)
 
-
-BinanceCandles = stockMarketBC.get_candles("btcusdt", "5m", limit = 1000)
-
-
-
-cand = ST(BinanceCandles)
-
-x = cand.MACDS_RSI_EMA_Strategy()
-
+print(stockBC.tick_size)
