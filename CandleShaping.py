@@ -54,6 +54,20 @@ class Candleshaping():
         return self.convert_to_float(candles.reset_index(drop=True))
     
     def convert_to_float(self, candles):
+        """
+        This method converts string values of candles dataframe into float.
+
+        Parameters
+        ----------
+        candles : TYPE
+            pandas dataframe containing the candle values. (Id, Open, Close, High, Low, Volume)
+
+        Returns
+        -------
+        df : TYPE
+            pandas dataframe containing the candle values. (Id, Open, Close, High, Low, Volume)
+
+        """
         df = candles.astype({'Open':'float',
                              'Close':'float',
                              'High':'float',
@@ -62,6 +76,20 @@ class Candleshaping():
         return df
     
     def to_dateTime(candles):
+        """
+        This method converts the integer milisecond values of the Id column of candles into timestamp value.
+
+        Parameters
+        ----------
+        candles : TYPE
+            pandas dataframe containing the candle values. (Id, Open, Close, High, Low, Volume)
+
+        Returns
+        -------
+        candles : TYPE
+            pandas dataframe containing the candle values. (Id, Open, Close, High, Low, Volume)
+
+        """
         candles.astype({'Id':'int'})
         candles["Id"] = pd.to_datetime(candles['Id'], unit='s')
         candles.Id = candles.Id + pd.Timedelta('02:00:00')

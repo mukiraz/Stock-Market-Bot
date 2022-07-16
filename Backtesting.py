@@ -21,10 +21,10 @@ start_cash = 1000
 parameters = {
     "total_cash":0,
     "interval":"5m",
-    "symbol":"avaxusdt",
+    "symbol":"ethusdt",
     "cash":start_cash,
     "risk_percentage":0.01,
-    "risk_reward_ratio":1.5,
+    "risk_reward_ratio":1.2,
     "operation_time":"",
     "has_coin":False,
     "has_cash":True,
@@ -58,10 +58,10 @@ df_transactions = pd.DataFrame(columns = [
 
 Binance = BC("","")
 
-#CandleData = Binance.get_candles(parameters["symbol"],parameters["interval"], 1200)
+CandleData = Binance.get_candles(parameters["symbol"],parameters["interval"], 1200)
 print("Getting candlestick data. Please wait...")
 
-CandleData = Binance.get_historic_candles(parameters["symbol"], parameters["interval"], "1 April, 2022")
+#CandleData = Binance.get_historic_candles(parameters["symbol"], parameters["interval"], "10 July, 2022")
 
 print("Candlestick data was taken.")
 
@@ -146,64 +146,67 @@ def insert_transaction(operation_time,  operation_type, position, coin_amount, p
                 "explanation": explanation          
                 }
     return data
+
+def buy_coin(decision:str, candles, i):
+    if decision == "Long":
+        parameters["position"] = "Long"
+        parameters["stop_price"] = candles["atrlower"][i]
+    
+    elif decision == "Short":
+        parameters["position"] = "Short"
+        parameters["stop_price"] = candles["atrupper"][i]
+        
+    parameters["operation"] = "Buy"    
+    parameters["buy_price"] = candles["Close"][i]    
+    parameters["coin_amount"] = calculate_coin_amount(parameters["position"], parameters["operation"], parameters["symbol"],  parameters["buy_price"], parameters["stop_price"], parameters["cash"], parameters["risk_percentage"])    
+    parameters["sell_price"] = calculate_sell_price(parameters["position"], parameters["buy_price"], parameters["stop_price"], parameters["risk_reward_ratio"])
+    parameters["sell_price"] = calculate_sell_price(parameters["position"], parameters["buy_price"], parameters["stop_price"], parameters["risk_reward_ratio"])
+    calculate_comission(parameters["coin_amount"], Binance.CONST_COMISSION_RATE)
+    parameters["comission_fee"] = parameters["buy_price"] * parameters["comission"]    
+    fee = parameters["before_comission_calculated_coin_amount"] * parameters["buy_price"]
+    parameters["cash"] -= fee        
+    toggle_has()    
+    parameters["total_cash"] = parameters["cash"] + parameters["coin_amount"] * parameters["buy_price"]
+    parameters["operation_time"] = candles["Id"][i+1]
+    
+    if decision == "Long":
+        print("Long bought",parameters["total_cash"])
+    elif decision == "Short":
+        print("Short bought",parameters["total_cash"])
+    
+    data = insert_transaction(parameters["operation_time"], parameters["operation"], parameters["position"], 
+                               parameters["before_comission_calculated_coin_amount"], parameters["buy_price"],
+                               parameters["comission"], parameters["comission_fee"], parameters["after_comission_calculated_coin_amount"],
+                               fee, parameters["stop_price"], parameters["sell_price"], parameters["total_cash"]
+                               )
+        
+    return data
+
+
+
+
+        
     
 
 for i in range(len(candles)):
     if parameters["has_cash"]:
         if candles["Decision"][i] == "Long":
-            parameters["position"] = "Long"
-            parameters["operation"] = "Buy"
-            parameters["buy_price"] = candles["Close"][i]
-            parameters["stop_price"] = candles["atrlower"][i]
-            parameters["coin_amount"] = calculate_coin_amount(parameters["position"], parameters["operation"], parameters["symbol"],  parameters["buy_price"], parameters["stop_price"], parameters["cash"], parameters["risk_percentage"])
-            parameters["sell_price"] = calculate_sell_price(parameters["position"], parameters["buy_price"], parameters["stop_price"], parameters["risk_reward_ratio"])
-            calculate_comission(parameters["coin_amount"], Binance.CONST_COMISSION_RATE)
-            parameters["comission_fee"] = parameters["buy_price"] * parameters["comission"]
-            fee = parameters["before_comission_calculated_coin_amount"] * parameters["buy_price"]
-            parameters["cash"] -= fee
-            toggle_has()
-            parameters["total_cash"] = parameters["cash"] + parameters["coin_amount"] * parameters["buy_price"]
-            parameters["operation_time"] = candles["Id"][i+1]
-            data = insert_transaction(parameters["operation_time"], parameters["operation"], parameters["position"], 
-                               parameters["before_comission_calculated_coin_amount"], parameters["buy_price"],
-                               parameters["comission"], parameters["comission_fee"], parameters["after_comission_calculated_coin_amount"],
-                               fee, parameters["stop_price"], parameters["sell_price"], parameters["total_cash"]
-                               )
-            
+            data = buy_coin(candles["Decision"][i], candles, i)            
             df_transactions = df_transactions.append(data, ignore_index = True)
-            print("Long bought",parameters["total_cash"])
             continue
         elif candles["Decision"][i] == "Short":
-            parameters["position"] = "Short"
-            parameters["operation"] = "Buy"
-            parameters["buy_price"] = candles["Close"][i]
-            parameters["stop_price"] = candles["atrupper"][i]
-            parameters["coin_amount"] = calculate_coin_amount(parameters["position"], parameters["operation"], parameters["symbol"],  parameters["buy_price"], parameters["stop_price"], parameters["cash"], parameters["risk_percentage"])
-            parameters["sell_price"] = calculate_sell_price(parameters["position"], parameters["buy_price"], parameters["stop_price"], parameters["risk_reward_ratio"])
-            calculate_comission(parameters["coin_amount"], Binance.CONST_COMISSION_RATE)
-            parameters["comission_fee"] = parameters["buy_price"] * parameters["comission"]
-            fee = parameters["before_comission_calculated_coin_amount"] * parameters["buy_price"]
-            parameters["cash"] -= fee
-            toggle_has()
-            parameters["total_cash"] = parameters["cash"] + parameters["coin_amount"] * parameters["buy_price"]
-            parameters["operation_time"] = candles["Id"][i+1]
-            data = insert_transaction(parameters["operation_time"], parameters["operation"], parameters["position"], 
-                               parameters["before_comission_calculated_coin_amount"], parameters["buy_price"],
-                               parameters["comission"], parameters["comission_fee"], parameters["after_comission_calculated_coin_amount"],
-                               fee, parameters["stop_price"], parameters["sell_price"], parameters["total_cash"]
-                               )
-            
+            data = buy_coin(candles["Decision"][i], candles, i)            
             df_transactions = df_transactions.append(data, ignore_index = True)
-            print("Short bought",parameters["total_cash"])
             continue
         else:
             continue
     if parameters["has_coin"]:
         if parameters["position"] == "Long":
-            if  candles["High"][i] >= parameters["sell_price"]:
-                parameters["operation"] = "Sell"
+            if  candles["High"][i] >= parameters["sell_price"]:                
                 #profit
+                parameters["operation"] = "Sell"
                 toggle_has()
+                
                 calculate_comission(parameters["coin_amount"], Binance.CONST_COMISSION_RATE)
                 parameters["comission_fee"] = parameters["sell_price"] * parameters["comission"]
                 fee = parameters["sell_price"] * parameters["coin_amount"]
@@ -219,9 +222,11 @@ for i in range(len(candles)):
                 df_transactions = df_transactions.append(data, ignore_index = True)
                 print("Long sold. Profit!", parameters["total_cash"])
                 continue
-            elif candles["Low"][i] <= parameters["stop_price"]:
+            elif candles["Low"][i] <= parameters["stop_price"]:                
                 #loss
+                parameters["operation"] = "Sell"
                 toggle_has()
+                
                 calculate_comission(parameters["coin_amount"], Binance.CONST_COMISSION_RATE)
                 parameters["comission_fee"] = parameters["stop_price"] * parameters["comission"]
                 fee = parameters["stop_price"] * parameters["coin_amount"]
@@ -237,15 +242,18 @@ for i in range(len(candles)):
                 print("Long sold. Loss!", parameters["total_cash"])
                 continue
         elif parameters["position"] == "Short":
-            if candles["High"][i] >= parameters["stop_price"]:
+            if candles["High"][i] >= parameters["stop_price"]:                
                 #loss
+                parameters["operation"] = "Sell"
                 toggle_has()
+                
                 calculate_comission(parameters["coin_amount"], Binance.CONST_COMISSION_RATE)
                 parameters["comission_fee"] = parameters["stop_price"] * parameters["comission"]
                 margin_cost = calculate_interest_hourly(parameters["buy_price"],parameters["operation_time"], candles["Id"][i], Binance.CONST_DAILY_INTEREST_RATE)
                 net_loss = (parameters["stop_price"] - parameters["buy_price"]) * parameters["coin_amount"] + margin_cost
                 parameters["total_cash"] -= net_loss
                 parameters["cash"] = parameters["total_cash"]
+                fee = parameters["sell_price"] * parameters["coin_amount"]
                 data = insert_transaction(candles["Id"][i], "Sell", parameters["position"], 
                                parameters["before_comission_calculated_coin_amount"], parameters["stop_price"],
                                parameters["comission"], parameters["comission_fee"], parameters["after_comission_calculated_coin_amount"],
@@ -254,15 +262,18 @@ for i in range(len(candles)):
                 df_transactions = df_transactions.append(data, ignore_index = True)
                 print("Short sold. Loss!", parameters["total_cash"])
                 continue
-            elif candles["Low"][i] <= parameters["sell_price"]:
+            elif candles["Low"][i] <= parameters["sell_price"]:                
                 #profit
+                parameters["operation"] = "Sell"
                 toggle_has()
+                
                 calculate_comission(parameters["coin_amount"], Binance.CONST_COMISSION_RATE)
                 parameters["comission_fee"] = parameters["sell_price"] * parameters["comission"]
                 margin_cost = calculate_interest_hourly(parameters["buy_price"],parameters["operation_time"], candles["Id"][i], Binance.CONST_DAILY_INTEREST_RATE)
                 net_profit = (parameters["buy_price"] - parameters["sell_price"]) * parameters["coin_amount"] - margin_cost
                 parameters["total_cash"] += net_profit
                 parameters["cash"] = parameters["total_cash"]
+                fee = parameters["sell_price"] * parameters["coin_amount"]
                 data = insert_transaction(candles["Id"][i], parameters["operation"], parameters["position"], 
                                parameters["before_comission_calculated_coin_amount"], parameters["sell_price"],
                                parameters["comission"], parameters["comission_fee"], parameters["after_comission_calculated_coin_amount"],
