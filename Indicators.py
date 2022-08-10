@@ -133,6 +133,16 @@ class Indicators():
         arr = rsi.to_numpy() 
         return pd.DataFrame(arr, columns=["RSI"])
     
+    def getBollingerBands(self, length : int = 20, std : int = 2, ddof : int = 0):
+        bbands = self.candles.ta.bbands(length, std, ddof)
+        bbands.columns.values[0] = "Lower"
+        bbands.columns.values[2] = "Upper"
+        
+        cols = [1,3,4]
+        bbands.drop(bbands.columns[cols],axis=1,inplace=True)
+        
+        return bbands
+    
     
     
 

@@ -70,6 +70,7 @@ class BinanceConnection(IConnection):
             self.secret_key = secret_key
             self.client = Client(api_key, secret_key)
             self.tick_size = ''
+            self.symbol = ''
             print("Connected to Binance")
         except BinanceRequestException as e:
             BBE.BinanceRequestExceptionExc(function_name, e.message)

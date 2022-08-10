@@ -74,7 +74,7 @@ class Strategy():
                 if (cand["Decision"][i] == "Long") and (cand["MACD"][i] < 0):
                     cand.at[i, 'Decision'] = "Long"
                 elif (cand["Decision"][i] == "Short") and (cand["MACD"][i] > 0):
-                    cand.at[i, 'Decision'] = "Short"
+                     cand.at[i, 'Decision'] = "Short"
                 else:                
                     cand.at[i, 'Decision'] = np.nan
                 
@@ -82,5 +82,31 @@ class Strategy():
             return cand
         except ValueError:
             print("Your candle stick rows should be more than {}".format(EMAlength))
+
+    def Bollinger_Bands_Strategy(self):
+        BBands = Ind(self.candles).getBollingerBands(20,2)
+        candles = CS.to_dateTime(self.candles)        
+        position = False
+        decision = [np.nan,np.nan]
+        for i in range(2, len(candles)-2):
+            if (candles.Close[i-2] < BBands.Lower[i-2]) and (BBands.Lower[i-2] < candles.Close[i-1]):
+                if position == False :
+                    decision.append("Long")
+                    position = True
+                else:
+                    decision.append(np.nan)
+            elif (candles.Close[i-2] > BBands.Upper[i-2]) and (BBands.Upper[i-2] > candles.Close[i-1]):
+                if position == True:
+                    decision.append("Short")
+                    position = False
+                else:
+                    decision.append(np.nan)
+            else:
+                decision.append(np.nan)
+        decisionSignal = pd.DataFrame({"Decision":decision})
+        
+        
+        cand = pd.concat([candles, BBands, decisionSignal], axis=1, join='inner')
+        return cand
 
         
