@@ -307,14 +307,168 @@ class BacktestWithRatio(Backtesting):
                         continue
                     
         return df_transactions
+    
+class BacktestWithBuySell():
+    def __init__(self, symbol, candles, tick_size, comission_rate:float = 0.0, daily_interest_rate:float = 0.0, interval:str = "5m", start_cash = 1000):
+        self.parameters = {
+            "total_cash": 0,
+            "interval": interval,
+            "symbol":symbol,
+            "cash":start_cash,            
+            "operation_time":"",
+            "has_coin":False,
+            "has_cash":True,
+            "position":"",
+            "coin_amount":0.0,
+            "comission_rate":comission_rate,
+            "tick_size": tick_size,
+            "daily_interest_rate":daily_interest_rate,            
+            "comission":0,
+            "comission_fee":0,
+            "before_comission_calculated_coin_amount":0,
+            "after_comission_calculated_coin_amount":0,
+            "buy_price":0
+            }
+        
+        self.candles = candles
+    
+    def calculate_comission(self, coin_amount):
+        self.parameters["comission"] = coin_amount * self.parameters["comission_rate"]
+        self.parameters["before_comission_calculated_coin_amount"] = coin_amount
+        self.parameters["after_comission_calculated_coin_amount"] = coin_amount - self.parameters["comission"]
+        self.parameters["coin_amount"] = self.parameters["after_comission_calculated_coin_amount"]
+    
+    def normalize_coin(self, tick_size, amount, operation): 
+        operation = operation.lower()
+        if float(tick_size)<1:
+            for i in range(len(tick_size)):
+                if tick_size[i]=="1":
+                    precision =(-1,i-1)
+                    break
+        else:
+            for i in range(len(tick_size)):
+                if tick_size[i]=="1":
+                    precision =(1,i+1)
+                    break
+        
+        if operation == "buy":
+            if precision[0]==-1:
+                amt_str = "{:0.0{}f}".format(amount, precision[1])
+            else:
+                amt_str = str(amount)
+        elif operation == "sell":
+            if precision[0]==-1:
+                amount = str(amount)
+                dot = amount.index(".") + 1
+                amt_str = amount[0:dot+precision[1]]
+            else:
+                amt_str = str(amount)
+        
+        return float(amt_str)
+        
+    def calculate_coin_amount(self, operation, coin_price, cash):
+        coin_amount = cash / coin_price
+        return self.normalize_coin(self.parameters["tick_size"], coin_amount, operation)
+    
+    def buy_coin(self, decision:str, candles, i):
+        if decision == "Long":
+            self.parameters["position"] = "Long"
+        elif decision == "Short":
+            self.parameters["position"] = "Short"
+        
+        self.parameters["operation"] = "Buy"    
+        self.parameters["buy_price"] = candles["Open"][i]
+        self.parameters["coin_amount"] = self.calculate_coin_amount(self.parameters["operation"], self.parameters["buy_price"], self.parameters["cash"])
+        self.calculate_comission(self.parameters["coin_amount"])
+        self.parameters["comission_fee"] = self.parameters["buy_price"] * self.parameters["comission"]
+        fee = self.parameters["before_comission_calculated_coin_amount"] * self.parameters["buy_price"]
+        self.parameters["cash"] -= fee        
+        self.toggle_has()
+        self.parameters["total_cash"] = self.parameters["cash"] + self.parameters["coin_amount"] * self.parameters["buy_price"]
+        self.parameters["operation_time"] = candles["Id"][i]
+        if decision == "Long":
+            print("Long bought",self.parameters["total_cash"])
+        elif decision == "Short":
+            print("Short bought",self.parameters["total_cash"])
+        
+        return self.insert_transaction(self.parameters["operation_time"], 
+                                       self.parameters["operation"], 
+                                       self.parameters["position"], 
+                                       self.parameters["coin_amount"] ,
+                                       self.parameters["buy_price"],
+                                       self.parameters["comission"],
+                                       self.parameters["comission_fee"],
+                                       self.parameters["after_comission_calculated_coin_amount"],
+                                       fee,
+                                       self.parameters["total_cash"]
+                                       )
+    
+    
+    
+    def insert_transaction(self,
+                           operation_time,  
+                           operation_type, 
+                           position, 
+                           coin_amount, 
+                           price, 
+                           comission, 
+                           comission_fee, 
+                           after_comission_calculated_coin_amount, 
+                           fee, 
+                           total_cash, 
+                           explanation = ""):
+        
+        data ={
+                    "symbol": self.parameters["symbol"],
+                    "operation_time": operation_time,                     
+                    "operation_type" : operation_type,
+                    "position": position,
+                    "coin_amount" : coin_amount,
+                    "price" : price,
+                    "comission": comission,
+                    "comission_fee":comission_fee,
+                    "after_comission_calculated_coin_amount" : after_comission_calculated_coin_amount,
+                    "fee" : fee ,                    
+                    "total_cash": total_cash,
+                    "explanation": explanation          
+                    }
+        return data
+    
+    def toggle_has(self):
+        if self.parameters["has_cash"]:
+            self.parameters["has_cash"] = False
+            self.parameters["has_coin"] = True
+        else:
+            self.parameters["has_cash"] = True
+            self.parameters["has_coin"] = False
         
         
-        
-        
-        
-        
-        
-        
+    def backtest(self):
+        df_transactions = pd.DataFrame(columns = [
+            "operation_time", 
+            "symbol", 
+            "operation_type", 
+            "position",
+            "coin_amount", 
+            "price", 
+            "fee", 
+            "comission",
+            "comission_fee",
+            "after_comission_calculated_coin_amount",
+            "total_cash",            
+            "explanation"])
+        for i in range(len(self.candles)):
+            if  self.parameters["has_cash"]:
+                #buy coin
+                if (self.candles["Decision"][i] == "Long") or (self.candles["Decision"][i] == "Short"):
+                    data = self.buy_coin(self.candles["Decision"][i], self.candles, i)            
+                    df_transactions = df_transactions.append(data, ignore_index = True)                
+                else:
+                    continue
+               
+            if self.parameters["has_coin"]:
+                #sell coin
+                pass
         
         
         

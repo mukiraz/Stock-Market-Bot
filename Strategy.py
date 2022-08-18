@@ -89,13 +89,13 @@ class Strategy():
         position = False
         decision = [np.nan,np.nan]
         for i in range(2, len(candles)-2):
-            if (candles.Close[i-2] < BBands.Lower[i-2]) and (BBands.Lower[i-2] < candles.Close[i-1]):
+            if (candles.Close[i-2] < BBands.Lower[i-2]) and (BBands.Lower[i-1] < candles.Close[i-1]):
                 if position == False :
                     decision.append("Long")
                     position = True
                 else:
                     decision.append(np.nan)
-            elif (candles.Close[i-2] > BBands.Upper[i-2]) and (BBands.Upper[i-2] > candles.Close[i-1]):
+            elif (candles.Close[i-2] > BBands.Upper[i-2]) and (BBands.Upper[i-1] > candles.Close[i-1]):
                 if position == True:
                     decision.append("Short")
                     position = False
