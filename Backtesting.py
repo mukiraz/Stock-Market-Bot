@@ -9,8 +9,7 @@ This module contains Backtesting Classes
 """
 import pandas as pd
 
-class Backtesting():   
-    
+class Backtesting():
     def __init__(self, symbol, candles, tick_size, comission_rate:float = 0.0, daily_interest_rate:float = 0.0, interval:str = "5m", risk_percentage:float = 0.01, risk_reward_ratio: float = 1.2, start_cash = 1000):
         self.parameters = {
             "total_cash": 0,
@@ -92,29 +91,7 @@ class Backtesting():
         self.parameters["comission"] = coin_amount * self.parameters["comission_rate"]
         self.parameters["before_comission_calculated_coin_amount"] = coin_amount
         self.parameters["after_comission_calculated_coin_amount"] = coin_amount - self.parameters["comission"]
-        self.parameters["coin_amount"] = self.parameters["after_comission_calculated_coin_amount"]
-        
-    def insert_transaction(self,operation_time,  operation_type, position, coin_amount, price, 
-                           comission, comission_fee, after_comission_calculated_coin_amount, 
-                           fee, stop_price, sell_price, total_cash, explanation = ""):
-        
-        data ={
-                    "operation_time": operation_time ,
-                    "symbol": self.parameters["symbol"], 
-                    "operation_type" : operation_type,
-                    "position": position,
-                    "coin_amount" : coin_amount,
-                    "price" : price,
-                    "comission": comission,
-                    "comission_fee":comission_fee,
-                    "after_comission_calculated_coin_amount" : after_comission_calculated_coin_amount,
-                    "fee" : fee ,                 
-                    "stop_price":stop_price,
-                    "sell_price":sell_price,
-                    "total_cash": total_cash,
-                    "explanation": explanation          
-                    }
-        return data
+        self.parameters["coin_amount"] = self.parameters["after_comission_calculated_coin_amount"]   
     
     def normalize_coin(self, tick_size, amount, operation): 
         operation = operation.lower()

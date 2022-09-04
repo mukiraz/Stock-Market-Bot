@@ -161,6 +161,7 @@ class BinanceConnection(IConnection):
             self.tick_size = self.get_tick_size(self.symbol)
             candles = self.client.get_klines(symbol = self.symbol, interval = interval, limit = limit) 
             candles = self.make_candlestick(candles)
+            self.tick_size = self.get_tick_size(self.symbol)
             return candles
             
         except BinanceRequestException as e:
